@@ -1,0 +1,41 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+
+  web:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    command: bash -c "python wait_for_postgres.py && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DJANGO_SECRET_KEY=local
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
+      - DEBUG=True
+
+  documentation:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    command: mkdocs serve -a 0.0.0.0:8001
+    volumes:
+      - .:/code
+    ports:
+      - "8001:8001"
+
+volumes:
+  postgres_data:
